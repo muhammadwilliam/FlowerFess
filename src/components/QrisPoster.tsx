@@ -6,15 +6,60 @@ interface QrisPosterProps {
   showAmountBadge?: boolean;
 }
 
+/**
+ * Resolves the path to the QRIS code asset located in `public/assets/qris-code.png`.
+ * Compatible with GitHub Pages base URL (`/FlowerFess/`) as well as root domains and subdirectories.
+ */
+export const getQrisAssetUrl = (): string => {
+  // 1. Check Vite's build-time base URL (e.g., if built with base: '/FlowerFess/')
+  const base = import.meta.env.BASE_URL;
+  if (base && base !== '/' && base !== './') {
+    const cleanBase = base.endsWith('/') ? base : `${base}/`;
+    return `${cleanBase}assets/qris-code.png`;
+  }
+
+  // 2. Runtime detection for GitHub Pages subpath (e.g., /FlowerFess/ or /flowerfess/)
+  if (typeof window !== 'undefined' && window.location?.pathname) {
+    const pathname = window.location.pathname;
+    const match = pathname.match(/^(\/[^/]+)/);
+    if (match && match[1].toLowerCase() === '/flowerfess') {
+      return `${match[1]}/assets/qris-code.png`;
+    }
+  }
+
+  // 3. Fallback for relative base './'
+  if (base === './') {
+    return './assets/qris-code.png';
+  }
+
+  // 4. Default standard root path from public/assets
+  return '/assets/qris-code.png';
+};
+
 export const QrisPoster: React.FC<QrisPosterProps> = ({ amount, showAmountBadge = true }) => {
   const [copiedNmid, setCopiedNmid] = useState(false);
   const [isZoomed, setIsZoomed] = useState(false);
+  const [qrisImageUrl, setQrisImageUrl] = useState<string>(getQrisAssetUrl);
 
   const nmid = 'ID1026587085956';
   const merchantName = 'RamaSatria Store';
   const terminal = 'A01';
   const acquirerCode = '93600915';
   const printVersion = '1.0.08.09.26';
+
+  const handleImageError = () => {
+    setQrisImageUrl((currentUrl) => {
+      // If it failed with /assets/..., try /FlowerFess/assets/...
+      if (!currentUrl.includes('/FlowerFess/') && !currentUrl.includes('/flowerfess/')) {
+        return '/FlowerFess/assets/qris-code.png';
+      }
+      // If it failed with /FlowerFess/..., try relative ./assets/...
+      if (!currentUrl.startsWith('.')) {
+        return './assets/qris-code.png';
+      }
+      return currentUrl;
+    });
+  };
 
   const handleCopyNmid = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -26,7 +71,7 @@ export const QrisPoster: React.FC<QrisPosterProps> = ({ amount, showAmountBadge 
   const handleDownloadQr = (e: React.MouseEvent) => {
     e.stopPropagation();
     const link = document.createElement('a');
-    link.href = '/assets/qris-code.png';
+    link.href = qrisImageUrl;
     link.download = `QRIS-${merchantName.replace(/\s+/g, '_')}-${terminal}.png`;
     document.body.appendChild(link);
     link.click();
@@ -118,10 +163,11 @@ export const QrisPoster: React.FC<QrisPosterProps> = ({ amount, showAmountBadge 
           >
             <div className="relative">
               <img
-                src="/assets/qris-code.png"
+                src={qrisImageUrl}
                 alt={`QRIS ${merchantName} ${nmid}`}
                 className="w-52 h-52 sm:w-60 sm:h-60 object-contain mx-auto"
                 loading="eager"
+                onError={handleImageError}
               />
               
               {/* Subtle hover zoom overlay hint */}
@@ -253,9 +299,10 @@ export const QrisPoster: React.FC<QrisPosterProps> = ({ amount, showAmountBadge 
 
             <div className="p-3 bg-stone-50 border border-stone-200 rounded-xl my-2">
               <img
-                src="/assets/qris-code.png"
+                src={qrisImageUrl}
                 alt={`QRIS ${merchantName}`}
                 className="w-72 h-72 object-contain mx-auto"
+                onError={handleImageError}
               />
             </div>
 
