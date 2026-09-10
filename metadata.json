@@ -1,0 +1,6 @@
+{
+  "name": "Flowerfess",
+  "description": "Give flowers, deliver feelings. Jasa kirim bunga dan ucapan spesial untuk orang tersayang.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
